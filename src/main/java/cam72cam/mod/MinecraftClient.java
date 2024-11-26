@@ -17,15 +17,28 @@ public class MinecraftClient {
     }
 
     private static Player playerCache;
-    /** Hey, it's you! */
+    private static Entity entityCache;
+
+	/** Hey, it's you! */
     public static Player getPlayer() {
         EntityPlayerSP internal = Minecraft.getMinecraft().player;
         if (internal == null) {
             throw new RuntimeException("Called to get the player before minecraft has actually started!");
         }
-        if (playerCache == null || internal != playerCache.internal) {
-            playerCache = World.get(internal.world).getEntity(internal).asPlayer();
+        if (entityCache == null) {
+            entityCache = World.get(internal.world).getEntity(internal);
         }
+		// Cannot join immediately after game startup in multiplayer.
+		// The following fixes avoided the error, but the GUI cannot be displayed in IR when the game is joined immediately after startup. 
+		// It is possible to work around it by re-logging in.
+        if (playerCache == null || internal != playerCache.internal) {
+            if (entityCache == null) {
+                playerCache = new Player(Minecraft.getMinecraft().player);
+            } else {
+                playerCache = World.get(internal.world).getEntity(internal).asPlayer();
+            }
+        }
+		// -----
         return playerCache;
     }
 
